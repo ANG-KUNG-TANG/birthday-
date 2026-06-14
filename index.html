@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday Lily</title>
+    <style>
+        :root {
+            --gold: #FFD27A;
+            --gold2: #FFA500;
+            --cream: #F7F1E3;
+            --space: #050608;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            overflow: hidden;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: var(--space);
+            color: var(--gold);
+        }
+
+        #canvas-container { width: 100vw; height: 100vh; position: relative; }
+
+        /* ---------- Loading ---------- */
+        .loading-screen {
+            position: fixed; inset: 0; background: var(--space);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 3000; transition: opacity 0.5s ease;
+        }
+        .loading-spinner {
+            width: 48px; height: 48px;
+            border: 3px solid rgba(255, 210, 122, 0.15);
+            border-top: 3px solid var(--gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 18px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+
+        /* ---------- Opening overlay ---------- */
+        #opening-overlay {
+            position: fixed; inset: 0; z-index: 2000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; transition: opacity 0.8s ease;
+            pointer-events: none;
+        }
+
+        #opening-hint {
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            letter-spacing: 0.15em;
+            color: var(--gold);
+            text-transform: uppercase;
+            animation: gentlePulse 2.4s ease-in-out infinite;
+        }
+
+        @keyframes gentlePulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        #countdown-number {
+            font-family: Georgia, serif;
+            font-size: clamp(5rem, 18vw, 11rem);
+            font-weight: 900;
+            color: var(--gold);
+            text-shadow: 0 0 60px rgba(255, 180, 0, 0.9), 0 0 120px rgba(255, 140, 0, 0.5);
+            opacity: 0;
+        }
+
+        @keyframes countPulse {
+            0% { opacity: 0; transform: scale(0.6); }
+            40% { opacity: 1; transform: scale(1.15); }
+            100% { opacity: 0; transform: scale(1.5); }
+        }
+
+        #burst-flash {
+            position: fixed; inset: 0; z-index: 1900;
+            background: radial-gradient(circle, rgba(255,220,100,1) 0%, rgba(255,180,0,0.5) 40%, transparent 75%);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        /* ---------- Info panel ---------- */
+        #info {
+            position: absolute; top: 20px; left: 20px; z-index: 100;
+            background: rgba(5, 6, 8, 0.65);
+            padding: 16px 18px;
+            border-radius: 12px;
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 210, 122, 0.35);
+            pointer-events: none;
+            max-width: 280px;
+        }
+
+        #info h1 {
+            font-family: Georgia, serif;
+            font-size: 18px;
+            margin-bottom: 8px;
+            background: linear-gradient(45deg, var(--gold2), var(--gold));
+            background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        #status-container { font-size: 12px; color: var(--gold); }
+        #status { color: #9be39b; font-weight: bold; }
+        #hand-hint { margin-top: 7px; font-size: 12px; color: var(--gold); min-height: 1.4em; }
+
+        #gesture-indicator {
+            margin-top: 8px; opacity: 0; transition: opacity 0.25s ease;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .gesture-icon { font-size: 16px; }
+        .gesture-track { flex: 1; height: 5px; background: rgba(255,210,122,0.15); border-radius: 4px; overflow: hidden; }
+        #gesture-fill { height: 100%; width: 0%; background: var(--gold); transition: width 0.05s linear; }
+
+        /* Progress dots */
+        .progress-dots { margin-top: 10px; display: flex; gap: 6px; align-items: center; }
+        .progress-dots .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            border: 1px solid rgba(255, 210, 122, 0.5);
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+        .progress-dots .dot.seen { background: var(--gold); transform: scale(1.2); }
+
+        .step-labels { display: flex; gap: 6px; margin-top: 4px; }
+        .step-labels span { font-size: 9px; color: rgba(255,210,122,0.5); width: 8px; text-align: center; }
+
+        .stats { margin-top: 8px; font-size: 11px; color: rgba(255,210,122,0.6); display: flex; gap: 16px; }
+
+        .controls-hint {
+            margin-top: 10px; padding-top: 10px;
+            border-top: 1px solid rgba(255,210,122,0.12);
+            font-size: 11px; color: rgba(255,210,122,0.75); line-height: 1.7;
+        }
+
+        /* ---------- Camera ---------- */
+        #video-container {
+            position: absolute; top: 16px; right: 16px; z-index: 100;
+            width: 120px; height: 90px;
+            border: 2px solid rgba(255, 210, 122, 0.5);
+            border-radius: 10px; overflow: hidden; background: #111;
+            box-shadow: 0 0 20px rgba(255,180,0,0.2);
+            transform: scaleX(-1);
+        }
+        #video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* ---------- Panels ---------- */
+        .panel {
+            position: absolute; left: 50%; bottom: 7%;
+            transform: translate(-50%, 28px);
+            width: min(560px, 88vw);
+            background: rgba(6, 5, 3, 0.72);
+            border: 1px solid rgba(255, 210, 122, 0.4);
+            border-radius: 18px;
+            backdrop-filter: blur(8px);
+            padding: 1.6rem 1.8rem;
+            text-align: center;
+            z-index: 90;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+            box-shadow: 0 0 40px rgba(255,180,0,0.08);
+        }
+        .panel.active { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+
+        .panel .eyebrow {
+            font-size: 0.68rem; letter-spacing: 0.32em; text-transform: uppercase;
+            color: var(--gold2); margin-bottom: 0.6rem; display: block; opacity: 0.85;
+        }
+
+        .panel p { font-size: 0.95rem; line-height: 1.7; margin-bottom: 0.5rem; color: var(--gold); }
+
+        .panel p.script {
+            font-family: 'Brush Script MT', 'Segoe Script', cursive;
+            font-size: 1.45rem; color: var(--gold); margin: 0.6rem 0;
+            text-shadow: 0 0 20px rgba(255,180,0,0.4);
+        }
+
+        .panel-buttons {
+            margin-top: 1.1rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem;
+        }
+        .panel-buttons button {
+            font-family: inherit; font-size: 0.92rem; padding: 0.75rem 1.5rem;
+            border-radius: 999px; cursor: pointer;
+            background: rgba(255, 180, 0, 0.1);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .panel-buttons button:hover {
+            background: rgba(255, 180, 0, 0.22);
+            transform: translateY(-2px);
+            box-shadow: 0 0 16px rgba(255,180,0,0.3);
+        }
+
+        /* ---------- Finale ---------- */
+        #final-screen {
+            position: fixed; inset: 0; z-index: 1500;
+            background: rgba(2, 2, 3, 0.88); backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.9s ease;
+        }
+        #final-screen.active { opacity: 1; pointer-events: auto; }
+
+        .final-card {
+            background: rgba(10, 9, 5, 0.95);
+            border: 1px solid rgba(255, 210, 122, 0.45);
+            border-radius: 20px; padding: 2rem; max-width: 440px; width: 90vw;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(255,180,0,0.15), 0 30px 80px -30px rgba(0,0,0,0.8);
+        }
+        .final-card img {
+            width: 100%; border-radius: 12px;
+            border: 2px solid rgba(255, 210, 122, 0.4);
+            margin-bottom: 1.3rem; display: block;
+            box-shadow: 0 0 30px rgba(255,180,0,0.15);
+        }
+        .final-card h2 {
+            font-family: Georgia, serif; font-size: 1.65rem;
+            background: linear-gradient(45deg, var(--gold2), var(--gold));
+            background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 0.6rem;
+        }
+        .final-card p { font-size: 0.95rem; color: var(--gold); line-height: 1.7; }
+        .final-card .the-end {
+            margin-top: 1rem; font-size: 0.78rem; letter-spacing: 0.38em;
+            text-transform: uppercase; color: rgba(255,210,122,0.7);
+        }
+
+        /* ---------- Music btn ---------- */
+        #music-btn {
+            position: fixed; bottom: 20px; right: 20px; z-index: 200;
+            background: rgba(5,6,8,0.75); border: 1px solid rgba(255,210,122,0.4);
+            color: var(--gold); font-size: 18px; width: 42px; height: 42px;
+            border-radius: 50%; cursor: pointer; backdrop-filter: blur(6px);
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        #music-btn:hover { background: rgba(255,180,0,0.15); box-shadow: 0 0 14px rgba(255,180,0,0.3); }
+
+        @media (max-width: 600px) {
+            #info { max-width: 210px; padding: 11px; }
+            .panel { padding: 1.1rem; bottom: 5%; }
+            #video-container { width: 90px; height: 68px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <div style="color: var(--gold); font-size: 15px; letter-spacing: 0.1em;">Gathering stars...</div>
+    </div>
+
+    <div id="burst-flash"></div>
+
+    <div id="opening-overlay">
+        <div id="countdown-number"></div>
+        <div id="opening-hint">✨ Show your open hand to begin</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <!-- Info panel -->
+    <div id="info">
+        <h1>Happy Birthday, Lily ✨</h1>
+        <div id="status-container">Status: <span id="status">Preparing...</span></div>
+        <div id="hand-hint"></div>
+
+        <div id="gesture-indicator">
+            <span class="gesture-icon"></span>
+            <div class="gesture-track"><div id="gesture-fill"></div></div>
+        </div>
+
+        <div class="progress-dots">
+            <span class="dot" id="dot-wish" title="Step 2: Wish"></span>
+            <span class="dot" id="dot-secret" title="Step 3: Secret"></span>
+            <span class="dot" id="dot-finale" title="Step 4: Photo"></span>
+        </div>
+
+        <div class="stats">
+            <div>Particles: <span id="particle-count">20,000</span></div>
+            <div>FPS: <span id="fps">0</span></div>
+        </div>
+
+        <div class="controls-hint">
+            ✌️ Peace → wish / next step<br>
+            ✊ Hold fist → secret heart<br>
+            ✌️ Peace after secret → photo
+        </div>
+    </div>
+
+    <div id="video-container" class="hidden">
+        <video id="video" autoplay playsinline></video>
+    </div>
+
+    <!-- Step 2: Wish -->
+    <div id="panel-wish" class="panel">
+        <span class="eyebrow">A Little Letter</span>
+        <p>Before today, I wanted to make something just for you.</p>
+        <p>Not a gift from a store. Not something expensive.</p>
+        <p class="script">Just something that reminds you how much I care.</p>
+        <p>Your kindness, your smile, your laugh — and the way you always ask "Did u eat?" ❤️</p>
+        <p class="script">I'd like to keep getting to know you better.</p>
+        <p>What do you think? 💛</p>
+        <div class="panel-buttons">
+            <button onclick="chooseAnswer()">❤️ I'd like that too</button>
+            <button onclick="chooseAnswer()">😊 Let's keep getting to know each other</button>
+        </div>
+    </div>
+
+    <!-- Step 3: Secret -->
+    <div id="panel-secret" class="panel">
+        <span class="eyebrow">For Your Eyes Only 🤫</span>
+        <p>Lily, the more we talked, the more important you became to me.</p>
+        <p>I enjoy talking to you, hearing about your day, hearing your voice —</p>
+        <p>and the fact that after all this time, I still look forward to every conversation.</p>
+        <p class="script">Thank you for being part of my life. — Always</p>
+        <p style="font-size:0.82rem; opacity:0.7; margin-top:0.5rem;">✌️ Peace sign → back to Happy Birthday</p>
+    </div>
+
+    <!-- Step 4: Finale -->
+    <div id="final-screen">
+        <div class="final-card">
+            <img id="final-photo" alt="Birthday photo">
+            <h2>Happy Birthday, Lily! 🎂</h2>
+            <p>Here's to many more memories, calls, and laughs together. ❤️</p>
+            <div class="the-end">— The End —</div>
+        </div>
+    </div>
+
+    <!-- Music -->
+    <button id="music-btn" onclick="toggleMusic()" title="Toggle music">🎵</button>
+
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+
+    <!-- Project Scripts -->
+    <script src="hand.js"></script>
+    <script src="particles.js"></script>
+    <script src="main.js"></script>
+
+    <!-- Music: I Like You So Much You'll Know It -->
+    <script>
+        let musicStarted = false;
+        let musicOn = false;
+
+        const ytFrame = document.createElement('iframe');
+        ytFrame.id = 'yt-music';
+        ytFrame.allow = 'autoplay';
+        ytFrame.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;bottom:0;right:0;border:none;';
+        document.body.appendChild(ytFrame);
+
+        function startMusic() {
+            if (musicStarted) return;
+            musicStarted = true;
+            musicOn = true;
+            ytFrame.src = 'https://www.youtube.com/embed/Z_D4LGDW3s8?autoplay=1&loop=1&playlist=Z_D4LGDW3s8&controls=0';
+            document.getElementById('music-btn').textContent = '🎵';
+        }
+
+        function toggleMusic() {
+            if (!musicStarted) { startMusic(); return; }
+            musicOn = !musicOn;
+            ytFrame.src = musicOn
+                ? 'https://www.youtube.com/embed/Z_D4LGDW3s8?autoplay=1&loop=1&playlist=Z_D4LGDW3s8&controls=0'
+                : 'about:blank';
+            document.getElementById('music-btn').textContent = musicOn ? '🎵' : '🔇';
+        }
+
+        // Auto-start music on first user interaction
+        document.addEventListener('click', startMusic, { once: true });
+        document.addEventListener('keydown', startMusic, { once: true });
+    </script>
+</body>
+</html>
