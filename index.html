@@ -40,6 +40,33 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .hidden { display: none !important; }
 
+        /* ---------- Tap to begin ---------- */
+        #tap-to-begin {
+            position: fixed; inset: 0; z-index: 4000;
+            background: var(--space);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: opacity 0.6s ease;
+        }
+        #tap-to-begin.fade-out { opacity: 0; pointer-events: none; }
+        .tap-card {
+            text-align: center; padding: 2rem;
+            animation: gentlePulse 2.4s ease-in-out infinite;
+        }
+        .tap-emoji { font-size: clamp(3rem, 12vw, 5rem); margin-bottom: 0.8rem; }
+        .tap-title {
+            font-family: Georgia, serif;
+            font-size: clamp(1.1rem, 4vw, 1.6rem);
+            color: var(--gold);
+            margin-bottom: 0.6rem;
+        }
+        .tap-sub {
+            font-size: clamp(0.85rem, 3vw, 1.05rem);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: rgba(255, 210, 122, 0.75);
+        }
+
         /* ---------- Opening overlay ---------- */
         #opening-overlay {
             position: fixed; inset: 0; z-index: 2000;
@@ -229,6 +256,86 @@
             text-transform: uppercase; color: rgba(255,210,122,0.7);
         }
 
+        /* ---------- Manual fallback controls ---------- */
+        #manual-controls {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 200; display: flex; gap: 14px;
+        }
+        #manual-controls button {
+            width: 56px; height: 56px; border-radius: 50%;
+            font-size: 26px; cursor: pointer;
+            background: rgba(5,6,8,0.75);
+            border: 1px solid rgba(255,210,122,0.5);
+            color: var(--gold);
+            backdrop-filter: blur(6px);
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+        }
+        #manual-controls button:hover { background: rgba(255,180,0,0.18); box-shadow: 0 0 16px rgba(255,180,0,0.3); }
+        #manual-controls button:active { transform: scale(0.92); }
+
+        /* ---------- Bubbles ---------- */
+        #bubble-layer {
+            position: fixed; inset: 0; z-index: 50;
+            pointer-events: none; overflow: hidden;
+            transition: opacity 1.2s ease;
+        }
+        #bubble-layer.hidden { opacity: 0; }
+        .bubble {
+            position: absolute;
+            bottom: -10vh;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.55), rgba(255,210,122,0.12) 60%, rgba(255,210,122,0.02));
+            border: 1px solid rgba(255, 226, 160, 0.35);
+            box-shadow: 0 0 12px rgba(255,210,122,0.15) inset;
+            animation: floatBubble linear infinite;
+            opacity: 0;
+        }
+        @keyframes floatBubble {
+            0%   { transform: translateY(0) translateX(0) scale(0.8); opacity: 0; }
+            8%   { opacity: 0.85; }
+            50%  { transform: translateY(-55vh) translateX(var(--drift, 20px)) scale(1); }
+            92%  { opacity: 0.7; }
+            100% { transform: translateY(-110vh) translateX(calc(var(--drift, 20px) * -1)) scale(1.08); opacity: 0; }
+        }
+
+        /* ---------- Birthday decorations ---------- */
+        #decoration-layer {
+            position: fixed; inset: 0; z-index: 55;
+            pointer-events: none; overflow: hidden;
+            transition: opacity 1s ease;
+        }
+        #decoration-layer.hidden { opacity: 0; }
+        #decoration-layer .balloon {
+            position: absolute; font-size: clamp(2.2rem, 6vw, 4rem);
+            filter: drop-shadow(0 0 10px rgba(255,180,0,0.25));
+            animation: balloonFloat 7s ease-in-out infinite;
+        }
+        .balloon-1 { left: 6%;  top: 14%; animation-delay: 0s;    }
+        .balloon-2 { left: 88%; top: 10%; animation-delay: 1.2s; }
+        .balloon-3 { left: 12%; top: 70%; animation-delay: 2.4s; }
+        .balloon-4 { left: 82%; top: 66%; animation-delay: 0.6s; }
+        @keyframes balloonFloat {
+            0%, 100% { transform: translateY(0) rotate(-3deg); }
+            50%      { transform: translateY(-22px) rotate(3deg); }
+        }
+
+        #decoration-layer .confetti {
+            position: absolute; top: -8vh; font-size: clamp(1.3rem, 3.5vw, 2.4rem);
+            animation: confettiFall linear infinite;
+            opacity: 0.9;
+        }
+        .confetti-1 { left: 15%; animation-duration: 6.5s; animation-delay: 0s; }
+        .confetti-2 { left: 35%; animation-duration: 8s;   animation-delay: 1.5s; }
+        .confetti-3 { left: 55%; animation-duration: 7s;   animation-delay: 0.8s; }
+        .confetti-4 { left: 72%; animation-duration: 9s;   animation-delay: 2.5s; }
+        .confetti-5 { left: 90%; animation-duration: 6s;   animation-delay: 3.2s; }
+        @keyframes confettiFall {
+            0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10%  { opacity: 0.9; }
+            100% { transform: translateY(110vh) rotate(420deg); opacity: 0.85; }
+        }
+
         /* ---------- Music btn ---------- */
         #music-btn {
             position: fixed; bottom: 20px; right: 20px; z-index: 200;
@@ -253,6 +360,15 @@
         <div style="color: var(--gold); font-size: 15px; letter-spacing: 0.1em;">Gathering stars...</div>
     </div>
 
+    <!-- Tap-to-begin overlay: unlocks audio autoplay -->
+    <div id="tap-to-begin" class="hidden">
+        <div class="tap-card">
+            <div class="tap-emoji">🎂</div>
+            <div class="tap-title">A little something for you, Lily</div>
+            <div class="tap-sub">Tap to begin ✨</div>
+        </div>
+    </div>
+
     <div id="burst-flash"></div>
 
     <div id="opening-overlay">
@@ -261,6 +377,20 @@
     </div>
 
     <div id="canvas-container"></div>
+
+    <!-- Bubbles & birthday decorations (shown after countdown burst) -->
+    <div id="bubble-layer" class="hidden"></div>
+    <div id="decoration-layer" class="hidden">
+        <span class="balloon balloon-1">🎈</span>
+        <span class="balloon balloon-2">🎈</span>
+        <span class="balloon balloon-3">🎈</span>
+        <span class="balloon balloon-4">🎈</span>
+        <span class="confetti confetti-1">🎉</span>
+        <span class="confetti confetti-2">✨</span>
+        <span class="confetti confetti-3">🎊</span>
+        <span class="confetti confetti-4">✨</span>
+        <span class="confetti confetti-5">🎉</span>
+    </div>
 
     <!-- Info panel -->
     <div id="info">
@@ -293,6 +423,12 @@
 
     <div id="video-container" class="hidden">
         <video id="video" autoplay playsinline></video>
+    </div>
+
+    <!-- Manual fallback controls (shown if camera/gestures unavailable) -->
+    <div id="manual-controls" class="hidden">
+        <button onclick="manualPeace()" title="Peace ✌️">✌️</button>
+        <button onclick="manualFist()" title="Fist ✊">✊</button>
     </div>
 
     <!-- Step 2: Wish -->
@@ -331,6 +467,7 @@
     </div>
 
     <!-- Music -->
+    <audio id="bg-music" src="song.mp3" loop preload="auto"></audio>
     <button id="music-btn" onclick="toggleMusic()" title="Toggle music">🎵</button>
 
     <!-- External Libraries -->
@@ -343,37 +480,42 @@
     <script src="particles.js"></script>
     <script src="main.js"></script>
 
-    <!-- Music: I Like You So Much You'll Know It -->
+    <!-- Music: local MP3 file -->
     <script>
-        let musicStarted = false;
-        let musicOn = false;
+        const audio = document.getElementById('bg-music');
+        let musicStarted = false; // audio has been primed (muted, playing)
+        let musicOn = false;      // unmuted/audible state
 
-        const ytFrame = document.createElement('iframe');
-        ytFrame.id = 'yt-music';
-        ytFrame.allow = 'autoplay';
-        ytFrame.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;bottom:0;right:0;border:none;';
-        document.body.appendChild(ytFrame);
-
-        function startMusic() {
+        // Step 1 (called on "Tap to begin"): start playback muted so it's primed and ready
+        function primeMusic() {
             if (musicStarted) return;
             musicStarted = true;
+            audio.muted = true;
+            audio.play().catch(() => {});
+            document.getElementById('music-btn').textContent = '🔇';
+        }
+
+        // Step 2 (called when "Happy Birthday" appears): unmute the already-playing audio
+        function startMusic() {
+            if (!musicStarted) primeMusic();
+            if (musicOn) return;
             musicOn = true;
-            ytFrame.src = 'https://www.youtube.com/embed/Z_D4LGDW3s8?autoplay=1&loop=1&playlist=Z_D4LGDW3s8&controls=0';
+            audio.muted = false;
+            audio.play().catch(() => {});
             document.getElementById('music-btn').textContent = '🎵';
         }
 
         function toggleMusic() {
-            if (!musicStarted) { startMusic(); return; }
+            if (!musicStarted) { primeMusic(); startMusic(); return; }
             musicOn = !musicOn;
-            ytFrame.src = musicOn
-                ? 'https://www.youtube.com/embed/Z_D4LGDW3s8?autoplay=1&loop=1&playlist=Z_D4LGDW3s8&controls=0'
-                : 'about:blank';
+            audio.muted = !musicOn;
+            if (musicOn) audio.play().catch(() => {});
             document.getElementById('music-btn').textContent = musicOn ? '🎵' : '🔇';
         }
 
-        // Auto-start music on first user interaction
-        document.addEventListener('click', startMusic, { once: true });
-        document.addEventListener('keydown', startMusic, { once: true });
+        window.primeMusic = primeMusic;
+        window.startMusic = startMusic;
+        window.toggleMusic = toggleMusic;
     </script>
 </body>
 </html>

@@ -66,15 +66,32 @@ async function init() {
         hideGestureIndicator();
     });
 
+    const insecureContext = !window.isSecureContext;
+
     try {
+        if (insecureContext) {
+            throw new Error('Insecure origin: camera blocked (need https or localhost)');
+        }
         await handDetector.init();
         setStatus('Gesture control active');
     } catch (e) {
-        setStatus('Keyboard mode');
+        console.warn('Hand detection unavailable:', e.message || e);
+        let reason = 'Tap buttons below';
+        if (insecureContext) {
+            reason = 'No camera (page not https) — use buttons';
+        } else if (e && e.name === 'NotAllowedError') {
+            reason = 'Camera permission denied — use buttons';
+        } else if (e && e.name === 'NotFoundError') {
+            reason = 'No camera found — use buttons';
+        } else if (e && /MediaPipe/i.test(e.message || '')) {
+            reason = 'Gesture library failed to load — use buttons';
+        }
+        setStatus('Manual mode');
         document.getElementById('status').style.color = '#ff9900';
-        setHint('SPACE = peace, F = fist');
+        setHint(reason);
         document.getElementById('video-container').classList.add('hidden');
         setupKeyboard();
+        showManualControls();
     }
 
     window.addEventListener('resize', () => {
@@ -171,6 +188,8 @@ function tickOpeningSequence(dt) {
                 appStep = 'home';
                 openingPhase = 'done';
                 setHint('✌️ Peace sign → see the wish');
+                showBirthdayDecor();
+                if (window.startMusic) window.startMusic();
             }, 1300);
             break;
     }
@@ -203,6 +222,42 @@ function flashBurst() {
     const f = document.getElementById('burst-flash');
     f.style.opacity = '0.85';
     setTimeout(() => { f.style.opacity = '0'; }, 600);
+}
+
+// ── Bubbles & decorations ──────────────────────────────────────────
+let bubbleSpawnInterval = null;
+
+function showBirthdayDecor() {
+    const bubbles = document.getElementById('bubble-layer');
+    const decor = document.getElementById('decoration-layer');
+    if (bubbles) bubbles.classList.remove('hidden');
+    if (decor) decor.classList.remove('hidden');
+    startBubbleSpawner();
+}
+
+function startBubbleSpawner() {
+    if (bubbleSpawnInterval) return;
+    const layer = document.getElementById('bubble-layer');
+    if (!layer) return;
+
+    const spawnBubble = () => {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        const size = 14 + Math.random() * 46; // 14px - 60px
+        bubble.style.width = size + 'px';
+        bubble.style.height = size + 'px';
+        bubble.style.left = Math.random() * 100 + 'vw';
+        const duration = 9 + Math.random() * 10; // 9s - 19s
+        bubble.style.animationDuration = duration + 's';
+        bubble.style.setProperty('--drift', (Math.random() * 120 - 60) + 'px');
+        layer.appendChild(bubble);
+        setTimeout(() => bubble.remove(), duration * 1000 + 500);
+    };
+
+    // Seed a few immediately so it doesn't feel empty
+    for (let i = 0; i < 6; i++) setTimeout(spawnBubble, i * 250);
+
+    bubbleSpawnInterval = setInterval(spawnBubble, 600);
 }
 
 // ── Step transitions ─────────────────────────────────────────────
@@ -333,22 +388,43 @@ function triggerFinale() {
 }
 
 // ── Keyboard fallback ─────────────────────────────────────────────
+// ── Manual gesture actions (shared by keyboard + on-screen buttons) ──
+function manualPeace() {
+    if (openingPhase === 'waiting-for-hand') {
+        beginCountdown();
+        return;
+    }
+    if (openingPhase !== 'done' || finaleDone) return;
+    if (gestureCooldown) return;
+
+    if (appStep === 'home') {
+        if (secretSeen) triggerStep('done');
+        else triggerStep('wish');
+    } else if (appStep === 'secret') {
+        triggerStep('home');
+    }
+}
+
+function manualFist() {
+    if (openingPhase !== 'done' || finaleDone) return;
+    if (gestureCooldown) return;
+
+    if (appStep === 'home' || appStep === 'wish') {
+        closePanel('wish');
+        triggerStep('secret');
+    }
+}
+
 function setupKeyboard() {
     window.addEventListener('keydown', (e) => {
-        if (openingPhase === 'waiting-for-hand') {
-            if (e.code === 'Space') beginCountdown();
-            return;
-        }
-        if (openingPhase !== 'done' || finaleDone) return;
-        if (e.code === 'KeyP') {
-            if (appStep === 'home') triggerStep('wish');
-            else if (appStep === 'secret') triggerStep('home');
-            else if (appStep === 'home' && secretSeen) triggerStep('done');
-        }
-        if (e.code === 'KeyF' || e.code === 'Escape') {
-            if (appStep === 'home' || appStep === 'wish') triggerStep('secret');
-        }
+        if (e.code === 'Space' || e.code === 'KeyP') manualPeace();
+        if (e.code === 'KeyF' || e.code === 'Escape') manualFist();
     });
+}
+
+function showManualControls() {
+    const el = document.getElementById('manual-controls');
+    if (el) el.classList.remove('hidden');
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -406,6 +482,14 @@ function animate() {
 window.onSystemReady = () => {
     document.getElementById('loading-screen').classList.add('hidden');
     document.getElementById('particle-count').textContent = particleSystem.config.particleCount.toLocaleString();
+
+    const tapOverlay = document.getElementById('tap-to-begin');
+    tapOverlay.classList.remove('hidden');
+    tapOverlay.addEventListener('click', () => {
+        if (window.primeMusic) window.primeMusic();
+        tapOverlay.classList.add('fade-out');
+        setTimeout(() => tapOverlay.classList.add('hidden'), 700);
+    }, { once: true });
 };
 
 init();
