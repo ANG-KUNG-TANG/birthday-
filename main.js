@@ -124,12 +124,12 @@ function handleHandFrame(data) {
     // Peace sign handling
     if (data.gesture === 'peace') {
         if (appStep === 'home') {
-            // Step 2: show wish
+            // Step 2: show wish (the letter)
             if (!gestureCooldown) triggerStep('wish');
         } else if (appStep === 'wish') {
-            // nothing — wait for button click
+            // nothing — hold a fist to continue to the secret
         } else if (appStep === 'secret') {
-            // peace from secret → back home
+            // peace from secret → back home (only if she hasn't answered yet)
             if (!gestureCooldown) triggerStep('home');
         }
         gestureHoldDir = null; gestureHoldCount = 0; hideGestureIndicator();
@@ -271,16 +271,17 @@ function triggerStep(step) {
         closePanel('wish');
         closePanel('secret');
         particleSystem.setState('home');
-        setHint(secretSeen ? '✌️ Peace → capture photo' : '✌️ Peace sign → see the wish');
+        setHint(secretSeen ? '✌️ Peace → capture photo' : '✌️ Peace sign → see the letter');
     } else if (step === 'wish') {
         particleSystem.setState('wish');
         openPanel('wish');
-        setHint('Click a button to answer 💛');
+        setHint('✊ Hold fist → one more thing');
     } else if (step === 'secret') {
         secretSeen = true;
+        closePanel('wish');
         particleSystem.setState('secret');
         openPanel('secret');
-        setHint('✌️ Peace → back to Happy Birthday');
+        setHint('Click a button to answer 💛');
         updateDot('secret');
     } else if (step === 'done') {
         triggerFinale();
@@ -289,24 +290,39 @@ function triggerStep(step) {
 
 function updateIdleHint() {
     if (appStep === 'home') {
-        setHint(secretSeen ? '✌️ Peace → capture your photo' : '✌️ Peace → wish  |  ✊ Fist → secret');
+        setHint(secretSeen ? '✌️ Peace → capture your photo' : '✌️ Peace sign → see the letter');
     }
 }
 
-// Called by both answer buttons on the wish panel
-window.chooseAnswer = function () {
-    closePanel('wish');
+// Called by both answer buttons on the secret panel
+window.chooseAnswer = function (choice) {
+    closePanel('secret');
     updateDot('wish');
-    if (secretSeen) {
-        // Step 4: capture
-        appStep = 'home';
-        triggerStep('done');
+    // Show a warm notice first, then capture on "Continue"
+    showAnswerNotice(choice);
+};
+
+// Warm confirmation notice shown after she picks an answer
+function showAnswerNotice(choice) {
+    const titleEl = document.getElementById('notice-title');
+    const textEl = document.getElementById('notice-text');
+
+    if (choice === 'love') {
+        titleEl.textContent = '❤️ She said yes!';
+        textEl.textContent = "That means more to me than you know. Let's get a photo together to remember this moment.";
     } else {
-        // Back to home, hint to find secret
-        appStep = 'wish'; // force transition
-        triggerStep('home');
-        setTimeout(() => setHint('✊ Hold fist → secret message  |  ✌️ Peace → see again'), 1500);
+        titleEl.textContent = '😊 Sounds good to me';
+        textEl.textContent = "I'm really happy to hear that. Let's get a photo together to remember this moment.";
     }
+
+    document.getElementById('notice-screen').classList.add('active');
+}
+
+// Called by the "Continue" button on the notice screen
+window.continueToPhoto = function () {
+    document.getElementById('notice-screen').classList.remove('active');
+    appStep = 'home';
+    triggerStep('done');
 };
 
 // ── Panel helpers ─────────────────────────────────────────────────
@@ -373,14 +389,16 @@ function triggerFinale() {
     ctx.fillStyle = '#FFD27A';
     ctx.font = '900 40px serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Happy 20th Birthday, Phally 🎉', W / 2, H - 55);
+    ctx.fillText('Happy 20th Birthday, Lily 🎉', W / 2, H - 55);
 
     ctx.fillStyle = '#FFD27A';
     ctx.font = '22px sans-serif';
     ctx.fillText('🎂  ❤️  ✨', W / 2, H - 18);
 
-    document.getElementById('final-photo').src = canvas.toDataURL('image/png');
-    setHint('🎉 Happy 20th Birthday, Phally!');
+    const photoDataUrl = canvas.toDataURL('image/png');
+    document.getElementById('final-photo').src = photoDataUrl;
+    document.getElementById('download-photo').href = photoDataUrl;
+    setHint('🎉 Happy 20th Birthday, Lily!');
 
     setTimeout(() => {
         document.getElementById('final-screen').classList.add('active');
