@@ -85,7 +85,7 @@ class ParticleSystem {
         // Step 3: Secret (heart shape)
         this.shapeSets.secret = this.generateHeartPoints();
         // Step 4: End
-        this.shapeSets.final  = await this.generateTextPoints('HAPPY', 'BIRTHDAY ❤');
+        this.shapeSets.final  = await this.generateTextPoints('HAPPY 20TH', 'BIRTHDAY ❤');
 
         const count = this.config.particleCount;
         const positions = new Float32Array(count * 3);

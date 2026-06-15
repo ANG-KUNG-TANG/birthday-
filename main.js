@@ -373,14 +373,14 @@ function triggerFinale() {
     ctx.fillStyle = '#FFD27A';
     ctx.font = '900 40px serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Happy Birthday, Lily 🎉', W / 2, H - 55);
+    ctx.fillText('Happy 20th Birthday, Phally 🎉', W / 2, H - 55);
 
     ctx.fillStyle = '#FFD27A';
     ctx.font = '22px sans-serif';
     ctx.fillText('🎂  ❤️  ✨', W / 2, H - 18);
 
     document.getElementById('final-photo').src = canvas.toDataURL('image/png');
-    setHint('🎉 Happy Birthday, Lily!');
+    setHint('🎉 Happy 20th Birthday, Phally!');
 
     setTimeout(() => {
         document.getElementById('final-screen').classList.add('active');

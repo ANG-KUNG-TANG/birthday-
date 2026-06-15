@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Happy Birthday Lily</title>
+    <title>Happy 20th Birthday Phally</title>
     <style>
         :root {
             --gold: #FFD27A;
@@ -192,6 +192,18 @@
         }
         .panel.active { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
 
+        /* Smaller variant for the opening letter so it doesn't block the
+           particle text/name behind it */
+        #panel-wish {
+            width: min(420px, 80vw);
+            padding: 1.1rem 1.3rem;
+            bottom: 5%;
+        }
+        #panel-wish p { font-size: 0.85rem; line-height: 1.55; margin-bottom: 0.35rem; }
+        #panel-wish p.script { font-size: 1.15rem; margin: 0.4rem 0; }
+        #panel-wish .panel-buttons button { font-size: 0.82rem; padding: 0.6rem 1.2rem; }
+
+
         .panel .eyebrow {
             font-size: 0.68rem; letter-spacing: 0.32em; text-transform: uppercase;
             color: var(--gold2); margin-bottom: 0.6rem; display: block; opacity: 0.85;
@@ -364,7 +376,7 @@
     <div id="tap-to-begin" class="hidden">
         <div class="tap-card">
             <div class="tap-emoji">🎂</div>
-            <div class="tap-title">A little something for you, Lily</div>
+            <div class="tap-title">A little something for you, Phally</div>
             <div class="tap-sub">Tap to begin ✨</div>
         </div>
     </div>
@@ -394,7 +406,7 @@
 
     <!-- Info panel -->
     <div id="info">
-        <h1>Happy Birthday, Lily ✨</h1>
+        <h1>Happy 20th Birthday, Phally ✨</h1>
         <div id="status-container">Status: <span id="status">Preparing...</span></div>
         <div id="hand-hint"></div>
 
@@ -434,10 +446,9 @@
     <!-- Step 2: Wish -->
     <div id="panel-wish" class="panel">
         <span class="eyebrow">A Little Letter</span>
-        <p>Before today, I wanted to make something just for you.</p>
-        <p>Not a gift from a store. Not something expensive.</p>
-        <p class="script">Just something that reminds you how much I care.</p>
-        <p>Your kindness, your smile, your laugh — and the way you always ask "Did u eat?" ❤️</p>
+        <p>Just something that reminds you how much I care.</p>
+        <p>Twenty years old today — June 16, 2006 to June 16, 2026. A whole new chapter starts now. 🎂</p>
+        <p>Your kindness, your smile, your laugh — and "Did u eat?" ❤️</p>
         <p class="script">I'd like to keep getting to know you better.</p>
         <p>What do you think? 💛</p>
         <div class="panel-buttons">
@@ -460,7 +471,7 @@
     <div id="final-screen">
         <div class="final-card">
             <img id="final-photo" alt="Birthday photo">
-            <h2>Happy Birthday, Lily! 🎂</h2>
+            <h2>Happy 20th Birthday, Phally! 🎂</h2>
             <p>Here's to many more memories, calls, and laughs together. ❤️</p>
             <div class="the-end">— The End —</div>
         </div>
